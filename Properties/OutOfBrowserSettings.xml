@@ -1,0 +1,8 @@
+<OutOfBrowserSettings ShortName="MonoKeys" EnableGPUAcceleration="True" ShowInstallMenuItem="True">
+  <OutOfBrowserSettings.Blurb>MonoKeys on your desktop; at home, at work or on the go.</OutOfBrowserSettings.Blurb>
+  <OutOfBrowserSettings.WindowSettings>
+    <WindowSettings Title="MonoKeys" Width="512" Height="128" />
+  </OutOfBrowserSettings.WindowSettings>
+  <OutOfBrowserSettings.Icons>
+  </OutOfBrowserSettings.Icons>
+</OutOfBrowserSettings>
