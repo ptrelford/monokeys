@@ -8,8 +8,8 @@ open Microsoft.Xna.Framework.Audio
 type App() as this = 
     inherit Application()
 
-    let sampleRate = 8000
-
+    let sampleRate = 44100
+    let sampleLength = 1.5 * float sampleRate |> int
     let sample x = x * 32767. |> int16
 
     let toBytes (xs:int16[]) =
@@ -17,15 +17,16 @@ type App() as this =
         Buffer.BlockCopy(xs, 0, bytes, 0, 2*xs.Length)
         bytes :?> byte[]
 
-    let create freq =
-        let samples = 12000
-        let sine i = sin (Math.PI * 2. * float i / float sampleRate * freq)
-        let fadeOut i = float (samples-i) / float samples
-        Array.init samples (fun i -> sine i * fadeOut i |> sample)
+    let pi = Math.PI
+    let sineWave freq i = sin (pi * 2. * float i / float sampleRate * freq)
+    let fadeOut i = float (sampleLength-i) / float sampleLength
+    let tremolo freq depth i = (1.0 - depth) + depth * Math.Pow(sineWave freq i, 2.0)
+
+    let create f =
+        Array.init sampleLength (f >> min 1.0 >> max -1.0 >> sample)
         |> toBytes
 
-    let play freq =        
-        let bytes = create freq
+    let play bytes =
         let effect = new SoundEffect(bytes, sampleRate, AudioChannels.Mono)       
         effect.Play() |> ignore
     
@@ -49,18 +50,37 @@ type App() as this =
         "C#", 554.37
         "D", 587.33]
 
+    let grid = Grid()
+    do  grid.RowDefinitions.Add(RowDefinition(Height=GridLength.Auto))
+    do  grid.RowDefinitions.Add(RowDefinition())
+    do  grid.RowDefinitions.Add(RowDefinition())
+
+    let tremoloFreq = Slider(Minimum = 0.001, Maximum = 10.0, Value=2.0)
+    do  Grid.SetRow(tremoloFreq, 1)
+    let tremoloDepth = Slider(Minimum = 0.0, Maximum = 50.0, Value=10.0)
+    do  Grid.SetRow(tremoloDepth, 2)
+
     let keys =
         tones |> Seq.map (fun (text,freq) ->
-            let key = Button(Content=text)
-            key.Click.Add(fun _ -> play freq)
+            let key = Button(Content=text)            
+            key.Click.Add(fun _ ->
+                let tremolo i = tremolo tremoloFreq.Value tremoloDepth.Value i
+                let f i = sineWave freq i * fadeOut i * tremolo i
+                let bytes = create f
+                play bytes
+            )
             key
         )
 
-    let grid = Grid()
+    let keyGrid = Grid(Height=128.)
     do  keys |> Seq.iteri (fun i key ->
-            grid.ColumnDefinitions.Add(ColumnDefinition())
+            keyGrid.ColumnDefinitions.Add(ColumnDefinition())
             Grid.SetColumn(key,i)
-            grid.Children.Add key
+            keyGrid.Children.Add key
         )
+
+    do  grid.Children.Add keyGrid
+    do  grid.Children.Add tremoloFreq
+    do  grid.Children.Add tremoloDepth
 
     do  this.Startup.AddHandler(fun o e -> this.RootVisual <- grid)
