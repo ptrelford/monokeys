@@ -20,7 +20,7 @@ type App() as this =
     let pi = Math.PI
     let sineWave freq i = sin (pi * 2. * float i / float sampleRate * freq)
     let fadeOut i = float (sampleLength-i) / float sampleLength
-    let tremolo freq depth i = (1.0 - depth) + depth * Math.Pow(sineWave freq i, 2.0)
+    let tremolo freq depth i = (1.0 - depth) + depth * (sineWave freq i) ** 2.0
 
     let create f =
         Array.init sampleLength (f >> min 1.0 >> max -1.0 >> sample)
@@ -65,8 +65,8 @@ type App() as this =
             let key = Button(Content=text)            
             key.Click.Add(fun _ ->
                 let tremolo i = tremolo tremoloFreq.Value tremoloDepth.Value i
-                let f i = sineWave freq i * fadeOut i * tremolo i
-                let bytes = create f
+                let shape i = sineWave freq i * fadeOut i * tremolo i
+                let bytes = create shape
                 play bytes
             )
             key
